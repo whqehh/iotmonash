@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Farm Defense Agency - Smart Edge IoT Irrigation & Actuator Control Operations Dashboard">
+  <title>Farm Defense Agency | Edge IoT Mission Command</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dark-theme">
+  <div class="glow-orb orb-primary"></div>
+  <div class="glow-orb orb-secondary"></div>
+
+  <div class="app-container">
+    <header class="top-bar">
+      <div class="brand-group">
+        <div class="badge-logo">FDA</div>
+        <div class="brand-text">
+          <h1>FARM DEFENSE AGENCY</h1>
+          <p class="subtitle">Edge IoT Irrigation &amp; Actuator Defense System &bull; Team hGroup3</p>
+        </div>
+      </div>
+      
+      <div class="header-status-panel">
+        <div class="status-chip chip-online">
+          <span class="status-dot pulse"></span>
+          <span class="status-label">EDGE SYSTEM: ONLINE</span>
+        </div>
+        <div class="status-chip chip-mysql">
+          <span class="status-dot"></span>
+          <span>MYSQL: <strong id="db-status-badge">CONNECTED</strong></span>
+        </div>
+        <button id="poll-now-btn" class="btn-primary-action" title="Trigger immediate hardware sensor poll">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          Poll Sensors Now
+        </button>
+      </div>
+    </header>
+
+    <main class="dashboard-grid">
+      <section class="section-sensors" aria-labelledby="sensors-heading">
+        <div class="section-header">
+          <h2 id="sensors-heading" class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Edge Sensor Telemetry (1-Min Polling &bull; MySQL: <code>sensor_data</code>)
+          </h2>
+          <span class="last-sync-caption">Auto-refreshing &bull; Last update: <span id="last-update-time">--:--:--</span></span>
+        </div>
+
+        <div class="sensors-card-deck">
+          <!-- Card 1: Soil Moisture -->
+          <div class="sensor-card glass-panel" id="card-soil-moisture">
+            <div class="sensor-card-top">
+              <span class="sensor-icon">🌱</span>
+              <div class="sensor-meta">
+                <span class="sensor-name">Soil Moisture</span>
+                <span class="sensor-channel">Key: <code>soil_moisture</code></span>
+              </div>
+              <span class="sensor-state-badge badge-normal" id="badge-soil-moisture">NOMINAL</span>
+            </div>
+            <div class="sensor-value-row">
+              <span class="sensor-huge-value" id="val-soil-moisture">--</span>
+              <span class="sensor-unit" id="unit-soil-moisture"></span>
+            </div>
+            <div class="gauge-bar-wrapper">
+              <div class="gauge-bar-track">
+                <div class="gauge-bar-fill" id="gauge-soil-moisture" style="width: 0%"></div>
+              </div>
+              <div class="gauge-threshold-markers">
+                <span>0</span>
+                <span class="marker-alert">Trigger: &lt;500 (Pump ON)</span>
+                <span>1023</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Water Reservoir Level -->
+          <div class="sensor-card glass-panel" id="card-water-level">
+            <div class="sensor-card-top">
+              <span class="sensor-icon">💧</span>
+              <div class="sensor-meta">
+                <span class="sensor-name">Water Level (Reservoir)</span>
+                <span class="sensor-channel">Key: <code>water_level</code></span>
+              </div>
+              <span class="sensor-state-badge badge-normal" id="badge-water-level">OPTIMAL</span>
+            </div>
+            <div class="sensor-value-row">
+              <span class="sensor-huge-value" id="val-water-level">--</span>
+              <span class="sensor-unit" id="unit-water-level"></span>
+            </div>
+            <div class="gauge-bar-wrapper">
+              <div class="gauge-bar-track">
+                <div class="gauge-bar-fill fill-water" id="gauge-water-level" style="width: 0%"></div>
+              </div>
+              <div class="gauge-threshold-markers">
+                <span>0</span>
+                <span class="marker-critical">Alert: &lt;500 (LED ON)</span>
+                <span>1023</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Temperature -->
+          <div class="sensor-card glass-panel" id="card-temperature">
+            <div class="sensor-card-top">
+              <span class="sensor-icon">🌡️</span>
+              <div class="sensor-meta">
+                <span class="sensor-name">Temperature / Sensor</span>
+                <span class="sensor-channel">Key: <code>temperature</code></span>
+              </div>
+              <span class="sensor-state-badge badge-normal" id="badge-temperature">STABLE</span>
+            </div>
+            <div class="sensor-value-row">
+              <span class="sensor-huge-value" id="val-temperature">--</span>
+              <span class="sensor-unit" id="unit-temperature"></span>
+            </div>
+            <div class="gauge-bar-wrapper">
+              <div class="gauge-bar-track">
+                <div class="gauge-bar-fill fill-temp" id="gauge-temperature" style="width: 0%"></div>
+              </div>
+              <div class="gauge-threshold-markers">
+                <span>0</span>
+                <span class="marker-alert">Fan On: &gt;300</span>
+                <span>1023</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: DHT11 Humidity -->
+          <div class="sensor-card glass-panel" id="card-humidity">
+            <div class="sensor-card-top">
+              <span class="sensor-icon">💨</span>
+              <div class="sensor-meta">
+                <span class="sensor-name">DHT11 Humidity</span>
+                <span class="sensor-channel">Key: <code>humidity</code></span>
+              </div>
+              <span class="sensor-state-badge badge-normal" id="badge-humidity">BALANCED</span>
+            </div>
+            <div class="sensor-value-row">
+              <span class="sensor-huge-value" id="val-humidity">--</span>
+              <span class="sensor-unit">%</span>
+            </div>
+            <div class="gauge-bar-wrapper">
+              <div class="gauge-bar-track">
+                <div class="gauge-bar-fill fill-humidity" id="gauge-humidity" style="width: 0%"></div>
+              </div>
+              <div class="gauge-threshold-markers">
+                <span>0%</span>
+                <span class="marker-alert">Target: 40-70%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Actuator Control Command Center -->
+      <section class="section-actuators glass-panel" aria-labelledby="actuators-heading">
+        <div class="section-header">
+          <h2 id="actuators-heading" class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            Edge Actuator Controls
+          </h2>
+          <span class="safety-badge">Auto &amp; Manual Override Active</span>
+        </div>
+
+        <div class="actuators-deck">
+          <!-- Actuator 1: Irrigation Pump -->
+          <div class="actuator-tile" id="tile-pump">
+            <div class="actuator-header">
+              <div class="actuator-title-group">
+                <div class="actuator-symbol pump-symbol">💧</div>
+                <div>
+                  <h3 class="actuator-name">Irrigation Water Pump</h3>
+                  <span class="actuator-spec">Primary Relay Actuator</span>
+                </div>
+              </div>
+              <span class="actuator-mode-badge" id="mode-pump">AUTO</span>
+            </div>
+
+            <div class="actuator-body">
+              <div class="status-indicator-display">
+                <div class="relay-lamp" id="lamp-pump"></div>
+                <div class="relay-text-state">
+                  <span class="state-label">RELAY STATE</span>
+                  <span class="state-value" id="state-pump">OFF</span>
+                </div>
+              </div>
+              <div class="actuator-reason" id="reason-pump">Awaiting threshold conditions...</div>
+            </div>
+
+            <div class="actuator-actions">
+              <button class="btn-toggle-actuator" id="btn-toggle-pump" onclick="toggleActuator('pump')">Toggle Manual</button>
+              <button class="btn-auto-actuator" id="btn-auto-pump" onclick="setModeAuto('pump')">Resume AUTO</button>
+            </div>
+          </div>
+
+          <!-- Actuator 2: Cooling Fan Motor -->
+          <div class="actuator-tile" id="tile-fan">
+            <div class="actuator-header">
+              <div class="actuator-title-group">
+                <div class="actuator-symbol fan-symbol">🌀</div>
+                <div>
+                  <h3 class="actuator-name">Cooling Fan Motor</h3>
+                  <span class="actuator-spec">Thermal &amp; Humidity Actuator</span>
+                </div>
+              </div>
+              <span class="actuator-mode-badge" id="mode-fan">AUTO</span>
+            </div>
+
+            <div class="actuator-body">
+              <div class="status-indicator-display">
+                <div class="relay-lamp" id="lamp-fan"></div>
+                <div class="relay-text-state">
+                  <span class="state-label">FAN MOTOR</span>
+                  <span class="state-value" id="state-fan">OFF</span>
+                </div>
+              </div>
+              <div class="actuator-reason" id="reason-fan">Climate nominal</div>
+            </div>
+
+            <div class="actuator-actions">
+              <button class="btn-toggle-actuator" id="btn-toggle-fan" onclick="toggleActuator('fan')">Toggle Manual</button>
+              <button class="btn-auto-actuator" id="btn-auto-fan" onclick="setModeAuto('fan')">Resume AUTO</button>
+            </div>
+          </div>
+
+          <!-- Actuator 3: System Status / Warning LED -->
+          <div class="actuator-tile" id="tile-led">
+            <div class="actuator-header">
+              <div class="actuator-title-group">
+                <div class="actuator-symbol led-symbol">💡</div>
+                <div>
+                  <h3 class="actuator-name">Warning &amp; Alarm LED</h3>
+                  <span class="actuator-spec">Safety &amp; Water Level Beacon</span>
+                </div>
+              </div>
+              <span class="actuator-mode-badge" id="mode-led">AUTO</span>
+            </div>
+
+            <div class="actuator-body">
+              <div class="status-indicator-display">
+                <div class="relay-lamp lamp-led" id="lamp-led"></div>
+                <div class="relay-text-state">
+                  <span class="state-label">OPTICAL STATUS</span>
+                  <span class="state-value" id="state-led">OFF</span>
+                </div>
+              </div>
+              <div class="actuator-reason" id="reason-led">No hazard detected</div>
+            </div>
+
+            <div class="actuator-actions">
+              <button class="btn-toggle-actuator" id="btn-toggle-led" onclick="toggleActuator('led')">Toggle Manual</button>
+              <button class="btn-auto-actuator" id="btn-auto-led" onclick="setModeAuto('led')">Resume AUTO</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Historical Chart Section -->
+      <section class="section-chart glass-panel" aria-labelledby="chart-heading">
+        <div class="section-header">
+          <h2 id="chart-heading" class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M18 9l-5 5-4-4-6 6"/></svg>
+            Live Sensor Telemetry Trends (MySQL Time-Series)
+          </h2>
+          <div class="chart-filter-pills">
+            <button class="pill active" onclick="switchChartMetric('all')">All Metrics</button>
+            <button class="pill" onclick="switchChartMetric('soil_moisture')">Soil Moisture</button>
+            <button class="pill" onclick="switchChartMetric('water_level')">Water Level</button>
+            <button class="pill" onclick="switchChartMetric('temperature')">Temperature</button>
+          </div>
+        </div>
+        <div class="chart-canvas-container">
+          <canvas id="telemetryChart"></canvas>
+        </div>
+      </section>
+
+      <!-- Security Audit Log Feed -->
+      <section class="section-security-feed glass-panel" aria-labelledby="security-heading">
+        <div class="section-header">
+          <h2 id="security-heading" class="section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Security &amp; Anomaly Audit Log (Table: <code>security_audit_logs</code>)
+          </h2>
+          <span class="security-pulse-tag">● Real-time Monitor</span>
+        </div>
+        <div class="audit-table-wrapper">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Event Type</th>
+                <th>Severity</th>
+                <th>Audit Details</th>
+                <th>Source IP</th>
+              </tr>
+            </thead>
+            <tbody id="audit-log-body">
+              <tr>
+                <td colspan="5" class="table-placeholder">Loading security audit records...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottom-footer">
+      <div>Farm Defense Agency &bull; Edge IoT Smart Irrigation &amp; Actuator Control System</div>
+      <div>Telemetry &amp; Decision Command Center</div>
+    </footer>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
