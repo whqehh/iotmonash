@@ -71,6 +71,46 @@ def api_get_sensor_history():
     history = get_sensor_history(pos, limit)
     return jsonify({"success": True, "count": len(history), "history": history})
 
+@app.route("/api/sensors/ingest", methods=["POST"])
+def api_ingest_hardware_data():
+    """
+    Direct Hardware Ingestion Endpoint for Arduino / ESP32 / Raspberry Pi.
+    Accepts JSON from microcontroller:
+    {
+      "water_level": 620.0,
+      "soil_moisture": 480.0,
+      "temperature": 315.0,
+      "humidity": 65.0
+    }
+    Inserts into MySQL, evaluates decisions, and returns actuator relay states.
+    """
+    data = request.get_json(silent=True) or {}
+    stored = {}
+
+    from backend.db import insert_sensor_reading
+    from backend.security import validate_sensor_payload
+
+    for pos in ["water_level", "soil_moisture", "temperature", "humidity"]:
+        if pos in data:
+            is_valid, err, val = validate_sensor_payload(pos, data[pos])
+            if is_valid:
+                row_id = insert_sensor_reading(pos, val)
+                stored[pos] = val
+
+    decision = evaluate_automation_cycle()
+    actuators = get_actuator_states()
+
+    return jsonify({
+        "success": True,
+        "message": f"Persisted {len(stored)} physical hardware readings into MySQL",
+        "stored": stored,
+        "actuators": {
+            "pump": actuators.get("pump", {}).get("state", False),
+            "fan": actuators.get("fan", {}).get("state", False),
+            "led": actuators.get("led", {}).get("state", False)
+        }
+    })
+
 @app.route("/api/sensors/poll-now", methods=["POST"])
 def api_trigger_poll():
     if not check_rate_limit(request.remote_addr, max_requests=10, window_sec=30):
